@@ -11,7 +11,7 @@ AUTHOR: decoder
 	* henry
 	[henry]
 ```
-So far we know that this is an executable file and it's stripped, which means there are less debug info for us to work on. By the way, each time we input, it return back the input string and exit. I tried using `ltrace` command and found this:
+So far we know that this is an executable file and it's stripped, which means there is no debug info for us to work on. By the way, each time we input, it return back the input string and exit. I tried using `ltrace` command and found this:
 ```bash
 	$ ltrace ./impossible_password.bin
 	__libc_start_main(0x40085d, 1, 0x7fffe75e06f8, 0x4009e0 <unfinished ...>
