@@ -72,5 +72,5 @@ And in the disassembler, I found this:
 ```
 
 *Have fun hacking!*
-## Flag
-`HTB{*****************}`
+
+Henry.
