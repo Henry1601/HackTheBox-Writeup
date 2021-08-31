@@ -16,13 +16,13 @@ So far we know that it is an executable file and it's not stripped, which means 
 ```bash
 	$ strings baby
 	...
-	HTB{B4BYH
-	_R3V_TH4H
-	TS_Ef
+	HTB{*****
+	*********
+	****f
 	[]A\A]A^A_
 	Dont run `strings` on this challenge, that is not the way!!!!
 	Insert key: 
-	abcde122313
+	***********
 	Try again later.
 	...
 ```
@@ -30,8 +30,8 @@ Now try the key we found here
 ```bash
 	$ ./baby
 	Insert key:
-	abcde122313
-	HTB{B4BY_R3V_TH4TS_EZ}
+	***********
+	HTB{*****************}
 ```
 Kind of easy right? In the discription they say there are 4 ways to solve this challenge. Let's find the others!
 I try `ltrace` and got this:
@@ -41,7 +41,7 @@ I try `ltrace` and got this:
 	)						= 13
 	fgets(aaaaaaaaaaa
 	"aaaaaaaaaaa\n", 20, 0x7f31bed55980)		= 0x7fff0c26ba30
-	strcmp("aaaaaaaaaaa\n", "abcde122313\n")	= -1
+	strcmp("aaaaaaaaaaa\n", "***********\n")	= -1
 	puts("Try again later."Try again later.
 	)						= 17
 	+++ exited (status 0) +++
@@ -58,19 +58,19 @@ Now, try using debugger
 ```
 And in the disassembler, I found this:
 ```bash
-	0x55fe06f40190      488d35bc0e00.  lea rsi, str.abcde122313_n    ; 0x55fe06f41053 ; "abcde122313\n"
+	0x55fe06f40190      488d35bc0e00.  lea rsi, str.***********_n    ; 0x55fe06f41053 ; "***********\n"
 	0x55fe06f40197      4889c7         mov rdi, rax
 	0x55fe06f4019a      e8b1feffff     call sym.imp.strcmp     ;[3]
 	0x55fe06f4019f      85c0           test eax, eax
 	0x55fe06f401a1      7537           jne 0x55fe06f401da
-	0x55fe06f401a3      48b84854427b.  movabs rax, 0x594234427b425448    ; 'HTB{B4BY'
-	0x55fe06f401ad      48ba5f523356.  movabs rdx, 0x3448545f5633525f    ; '_R3V_TH4'
+	0x55fe06f401a3      48b84854427b.  movabs rax, 0x594234427b425448    ; 'HTB{****'
+	0x55fe06f401ad      48ba5f523356.  movabs rdx, 0x3448545f5633525f    ; '********'
 	0x55fe06f401b7      488945c0       mov qword [var_40h], rax
 	0x55fe06f401bb      488955c8       mov qword [var_38h], rdx
-	0x55fe06f401bf      c745d054535f.  mov dword [var_30h], 0x455f5354    ; 'TS_E'
-	0x55fe06f401c6      66c745d45a7d   mov word [var_2ch], 0x7d5a    ; 'Z}'
+	0x55fe06f401bf      c745d054535f.  mov dword [var_30h], 0x455f5354    ; '****'
+	0x55fe06f401c6      66c745d45a7d   mov word [var_2ch], 0x7d5a    ; '*}'
 ```
 
 *Have fun hacking!*
 ## Flag
-`HTB{B4BY_R3V_TH4TS_EZ}`
+`HTB{*****************}`
