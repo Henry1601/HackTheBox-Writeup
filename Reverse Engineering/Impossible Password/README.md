@@ -20,15 +20,15 @@ So far we know that this is an executable file and it's stripped, which means th
 	)							= 1
 	printf("[%s]\n", "henry"[henry]
 	)							= 8
-	strcmp("henry", "SuperSeKretKey")			= 21
+	strcmp("henry", "**************")			= 21
 	exit(1 <no return ...>
 	+++ exited (status 1) +++
 ```
 As you can see, the program compare the input string with the key `SuperSeKretKey` then exit. Let's try the key
 ```bash
 	$ ./impossible_password.bin 
-	* SuperSeKretKey
-	[SuperSeKretKey]
+	* **************
+	[**************]
 	** 
 ```
 Look like there are multilevel password protection. Again, I'm using `ltrace` to look into the program process.
@@ -36,11 +36,11 @@ Look like there are multilevel password protection. Again, I'm using `ltrace` to
 	$ ltrace ./impossible_password.bin
 	__libc_start_main(0x40085d, 1, 0x7fff7a2ad728, 0x4009e0 <unfinished ...>
 	printf("* ")
-	__isoc99_scanf(0x400a82, 0x7fff7a2ad610, 0, 0* SuperSeKretKey
+	__isoc99_scanf(0x400a82, 0x7fff7a2ad610, 0, 0* **************
 	)
-	printf("[%s]\n", "SuperSeKretKey"[SuperSeKretKey]
+	printf("[%s]\n", "**************"[**************]
 	)
-	strcmp("SuperSeKretKey", "SuperSeKretKey")
+	strcmp("**************", "**************")
 	printf("** ")
 	__isoc99_scanf(0x400a82, 0x7fff7a2ad610, 0, 0** henry
 	)
@@ -93,7 +93,7 @@ And here is the main function:
 │           0x00400861      4883ec50       sub rsp, 0x50
 │           0x00400865      897dbc         mov dword [var_44h], edi
 │           0x00400868      488975b0       mov qword [var_50h], rsi
-│           0x0040086c      48c745f8700a.  mov qword [var_8h], str.SuperSeKretKey    ; 0x400a70 ; "SuperSeKretKey"
+│           0x0040086c      48c745f8700a.  mov qword [var_8h], str.**************    ; 0x400a70 ; "**************"
 │           0x00400874      c645c041       mov byte [var_40h], 0x41    ; 'A' ; 65
 │           0x00400878      c645c15d       mov byte [var_3fh], 0x5d    ; ']' ; 93
 │           0x0040087c      c645c24b       mov byte [var_3eh], 0x4b    ; 'K' ; 75
@@ -180,12 +180,12 @@ Now, reopen the program in write-mode and patch the binary
 Using arrow keys to find the command we want to change, press "Shift + A" and rewrite `je 0x400976`, then hit Enter and confirm. Now the program has been changed, let's quit radare and try our result:
 ```bash
 	$ ./impossible_password.bin
-	* SuperSeKretKey
-	[SuperSeKretKey]
+	* **************
+	[**************]
 	** henry
-	HTB{40b949f92b86b18}
+	HTB{***************}
 ```
 
 *Have fun hacking!*
 ## Flag
-`HTB{40b949f92b86b18}`
+`HTB{***************}`
