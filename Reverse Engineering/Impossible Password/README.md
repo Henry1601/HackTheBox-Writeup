@@ -187,5 +187,4 @@ Using arrow keys to find the command we want to change, press "Shift + A" and re
 ```
 
 *Have fun hacking!*
-## Flag
-`HTB{***************}`
+Henry.
