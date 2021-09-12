@@ -141,9 +141,6 @@ SQL> select is_srvrolemember ('sysadmin');
 -----------
           1		==> User has system admin privilege!
 
-SQL> xp_cmdshell "systeminfo"
-...
-
 SQL> 
 ```
 
