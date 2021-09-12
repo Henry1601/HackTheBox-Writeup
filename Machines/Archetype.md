@@ -65,7 +65,7 @@ As we can see, there are 5 open ports 135, 139, 445, 1234, 1433 and we also got 
 Do a bit research about these ports and I found that:
 - 135: MS-RPC endpoint mapper
 - 139: NetBIOS Session Service
-- 445: SMB protocol *(Further reading here [NetBIOS and SMB Penetration Testing on Windows](https://www.hackingarticles.in/netbios-and-smb-penetration-testing-on-windows/))*
+- 445: SMB protocol *(further reading here [NetBIOS and SMB Penetration Testing on Windows](https://www.hackingarticles.in/netbios-and-smb-penetration-testing-on-windows/))*
 - 1234: I still have no idea what is this port used for :v *([TCP 1234 - Port Protocol Information and Warning!](https://www.auditmypc.com/tcp-port-1234.asp))*
 - 1433: MS-SQL Server
 
